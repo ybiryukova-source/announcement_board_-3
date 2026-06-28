@@ -1,0 +1,76 @@
+
+GET http://localhost:3000/announcements
+Accept: application/json
+
+###
+
+GET http://localhost:3000/announcements?search=ноутбук
+Accept: application/json
+
+###
+
+GET http://localhost:3000/announcements?sort=oldest&page=1
+Accept: application/json
+
+###
+
+GET http://localhost:3000/announcements/1
+Accept: application/json
+
+###
+
+GET http://localhost:3000/announcements/999999
+Accept: application/json
+
+###
+
+POST http://localhost:3000/announcements
+Content-Type: application/json
+
+{
+  "title": "Продам ігровий монітор 27",
+  "description": "IPS матриця, 144Hz, чудовий стан, без битих пікселів.",
+  "price": 8500,
+  "category": "sale",
+  "contactInfo": "0931112233"
+}
+
+###
+
+POST http://localhost:3000/announcements
+Content-Type: application/json
+
+{
+  "title": "Корот",
+  "description": "Мал",
+  "price": -50,
+  "category": "invalid_category",
+  "contactInfo": "12"
+}
+
+###
+
+PATCH http://localhost:3000/announcements/1
+Content-Type: application/json
+
+{
+  "price": 7999,
+  "title": "Продам ноутбук ASUS (Оновлено)"
+}
+
+###
+
+PATCH http://localhost:3000/announcements/999999
+Content-Type: application/json
+
+{
+  "price": 5000
+}
+
+###
+
+DELETE http://localhost:3000/announcements/2
+
+###
+
+DELETE http://localhost:3000/announcements/999999
