@@ -1,32 +1,51 @@
-Домашня робота 3
+Домашня робота №4 — REST API з JWT автентифікацією
 
-RESTful API для сервісу "Дошка оголошень"
+Це простий REST API для дошки оголошень з автентифікацією, роллю власника та захистом маршрутів.
 
-Стек
-* Node.js / Express 5
-* Prisma ORM (SQLite)
-* Celebrate / Joi (валідація)
-* Swagger (документація)
+Технології
 
-Структура проєкту
-`prisma/schema.prisma` — модель даних та міграції
-`src/routes/` — маршрути та Swagger-коментарі
-`src/controllers/` — бізнес-логіка 
-`src/validators/` — схеми валідації вхідних даних
-`requests.http` — файл для тестування 
-Ендпоінти
-* `GET /announcements` — список із пагінацією сортуванням та пошуком
-* `GET /announcements/:id` — повна інформація за ID 
-* `POST /announcements` — створення з обов'язковою валідацією полів
-* `PATCH /announcements/:id` — часткове оновлення полів (400 на порожній об'єкт)
-* `DELETE /announcements/:id` — видалення (статус 204 No Content)
+- Node.js + Express
+- Prisma ORM (SQLite)
+- JWT (access + refresh токени)
+- bcrypt (хешування паролів)
+- celebrate / joi (валідація)
+- swagger (документація API)
 
-Швидкий запуск
+ Структура проєкту
 
-1. Встановити залежності:
+`prisma/schema.prisma` — база даних (User, Announcement, RefreshToken)
+`src/controllers` — логіка API
+`src/routes` — маршрути (auth + announcements)
+`src/middleware/auth.middleware.js` — перевірка JWT
+`src/validators` — валідація запитів
+`requests.http` — приклади запитів для тестування
+
+
+ Оголошення
+
+GET /announcements
+Публічний список оголошень
+
+GET /announcements/:id
+Отримання одного оголошення
+
+POST /announcements 
+Створення оголошення (з прив’язкою до userId)
+
+PATCH /announcements/:id 
+Редагування тільки своїх оголошень
+
+DELETE /announcements/:id 
+Видалення тільки своїх оголошень
+
+
+Захист
+
+JWT перевіряється в middleware
+ без токена доступ до POST / PATCH / DELETE заборонений
+
+Запуск проєкту
+
 npm install
-
-2. Запустити міграції та сервер:
-
-npm run prisma:migrate
+npx prisma migrate dev
 npm run dev

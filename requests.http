@@ -1,4 +1,3 @@
-
 GET http://localhost:3000/announcements
 Accept: application/json
 
@@ -24,6 +23,73 @@ Accept: application/json
 
 ###
 
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "securepass123",
+  "name": "Іван"
+}
+
+###
+
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "anotherpassword",
+  "name": "Іван Другий"
+}
+
+###
+
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "securepass123"
+}
+
+###
+
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "wrong_password"
+}
+
+###
+
+GET http://localhost:3000/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiaXZhbl9wZXRyZW5rbyIsImlhdCI6MTc4Mjc1MzI1MywiZXhwIjoxNzgyNzU0MTUzfQ.qXMQTSKo6zCID08puoCkuGzSOeTqTUs_BqFzm3bvpTk
+Accept: application/json
+
+###
+
+POST http://localhost:3000/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "ВСТАВ_СВІЙ_REFRESH_TOKEN"
+}
+
+###
+
+POST http://localhost:3000/auth/logout
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "refreshToken": "ВСТАВ_СВІЙ_REFRESH_TOKEN"
+}
+
+###
+
 POST http://localhost:3000/announcements
 Content-Type: application/json
 
@@ -38,6 +104,7 @@ Content-Type: application/json
 ###
 
 POST http://localhost:3000/announcements
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
 Content-Type: application/json
 
 {
@@ -50,7 +117,22 @@ Content-Type: application/json
 
 ###
 
+POST http://localhost:3000/announcements
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiaXZhbl9wZXRyZW5rbyIsImlhdCI6MTc4Mjc1MzI1MywiZXhwIjoxNzgyNzU0MTUzfQ.qXMQTSKo6zCID08puoCkuGzSOeTqTUs_BqFzm3bvpTk
+Content-Type: application/json
+
+{
+  "title": "Продам ігровий монітор 27",
+  "description": "IPS матриця, 144Hz, чудовий стан, без битих пікселів.",
+  "price": 8500,
+  "category": "sale",
+  "contactInfo": "0931112233"
+}
+
+###
+
 PATCH http://localhost:3000/announcements/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoiaXZhbl9wZXRyZW5rbyIsImlhdCI6MTc4Mjc1MzI1MywiZXhwIjoxNzgyNzU0MTUzfQ.qXMQTSKo6zCID08puoCkuGzSOeTqTUs_BqFzm3bvpTk
 Content-Type: application/json
 
 {
@@ -61,6 +143,7 @@ Content-Type: application/json
 ###
 
 PATCH http://localhost:3000/announcements/999999
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
 Content-Type: application/json
 
 {
@@ -69,8 +152,25 @@ Content-Type: application/json
 
 ###
 
+PATCH http://localhost:3000/announcements/2
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "price": 9999
+}
+
+###
+
+DELETE http://localhost:3000/announcements/1
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
+
+###
+
 DELETE http://localhost:3000/announcements/2
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
 
 ###
 
 DELETE http://localhost:3000/announcements/999999
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN

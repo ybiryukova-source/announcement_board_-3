@@ -1,53 +1,66 @@
-import { PrismaClient } from '../../generated/prisma/index.js';
+import { PrismaClient } from '@prisma/client'; // Оновлений стандартний імпорт
 
 const prisma = new PrismaClient();
 
-export const getAnnouncements = async (req, res) => {
-  const { search, sort = 'newest', page = 1 } = req.query;
+export const getAnnouncements = async (req, res, next) => {
+  try {
+    const { search, sort = 'newest', page = 1 } = req.query;
 
-  const perPage = 10;
-  const pageNum = Number(page);
+    const perPage = 10;
+    const pageNum = Number(page);
 
-  const where = {};
+    const where = {};
 
-  if (search) {
-    where.title = {
-      contains: search,
+    if (search) {
+      where.title = {
+        contains: search,
+      };
+    }
+
+    let orderBy = {
+      createdAt: 'desc',
     };
+
+    if (sort === 'oldest') {
+      orderBy = {
+        createdAt: 'asc',
+      };
+    }
+
+    const [announcements, total] = await Promise.all([
+      prisma.announcement.findMany({
+        where,
+        orderBy,
+        skip: (pageNum - 1) * perPage,
+        take: perPage,
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+            },
+          },
+        },
+      }),
+
+      prisma.announcement.count({
+        where,
+      }),
+    ]);
+
+    res.json({
+      data: announcements,
+      pagination: {
+        total,
+        page: pageNum,
+        totalPages: Math.ceil(total / perPage),
+        perPage,
+      },
+    });
+  } catch (err) {
+    next(err);
   }
-
-  let orderBy = {
-    createdAt: 'desc',
-  };
-
-  if (sort === 'oldest') {
-    orderBy = {
-      createdAt: 'asc',
-    };
-  }
-
-  const [announcements, total] = await Promise.all([
-    prisma.announcement.findMany({
-      where,
-      orderBy,
-      skip: (pageNum - 1) * perPage,
-      take: perPage,
-    }),
-
-    prisma.announcement.count({
-      where,
-    }),
-  ]);
-
-  res.json({
-    data: announcements,
-    pagination: {
-      total,
-      page: pageNum,
-      totalPages: Math.ceil(total / perPage),
-      perPage,
-    },
-  });
 };
 
 export async function getAnnouncementById(req, res, next) {
@@ -55,7 +68,16 @@ export async function getAnnouncementById(req, res, next) {
     const id = Number(req.params.id);
 
     const announcement = await prisma.announcement.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!announcement) {
@@ -111,6 +133,7 @@ export async function createAnnouncement(req, res, next) {
         price: Number(price),
         category,
         contactInfo: contactInfo.trim(),
+        userId: req.user.id,
       },
     });
 
@@ -123,22 +146,38 @@ export async function createAnnouncement(req, res, next) {
 export async function updateAnnouncement(req, res, next) {
   try {
     const id = Number(req.params.id);
+    const { title, description, price, category, contactInfo } = req.body;
 
-    const announcement = await prisma.announcement.update({
-      where: {
-        id,
-      },
-      data: req.body,
+    const announcement = await prisma.announcement.findUnique({
+      where: { id },
     });
 
-    res.json(announcement);
-  } catch (err) {
-    if (err.code === 'P2025') {
+    if (!announcement) {
       return res.status(404).json({
         error: 'Announcement not found',
       });
     }
 
+    if (announcement.userId !== req.user.id) {
+      return res.status(403).json({
+        error: 'Access denied',
+      });
+    }
+
+    // Оновлюємо безпечно, захищаючи службові поля бази
+    const updated = await prisma.announcement.update({
+      where: { id },
+      data: {
+        ...(title && { title: title.trim() }),
+        ...(description && { description: description.trim() }),
+        ...(price && { price: Number(price) }),
+        ...(category && { category }),
+        ...(contactInfo && { contactInfo: contactInfo.trim() }),
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
     next(err);
   }
 }
@@ -147,20 +186,28 @@ export async function deleteAnnouncement(req, res, next) {
   try {
     const id = Number(req.params.id);
 
-    await prisma.announcement.delete({
-      where: {
-        id,
-      },
+    const announcement = await prisma.announcement.findUnique({
+      where: { id },
     });
 
-    res.status(204).end();
-  } catch (err) {
-    if (err.code === 'P2025') {
+    if (!announcement) {
       return res.status(404).json({
         error: 'Announcement not found',
       });
     }
 
+    if (announcement.userId !== req.user.id) {
+      return res.status(403).json({
+        error: 'Access denied',
+      });
+    }
+
+    await prisma.announcement.delete({
+      where: { id },
+    });
+
+    res.status(204).end();
+  } catch (err) {
     next(err);
   }
 }

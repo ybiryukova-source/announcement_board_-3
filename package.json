@@ -9,10 +9,14 @@
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "bcrypt": "^6.0.0",
     "celebrate": "^15.0.3",
+    "cookie-parser": "^1.4.7",
     "ejs": "^5.0.2",
     "express": "^5.2.1",
+    "http-errors": "^2.0.1",
     "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.3",
     "prisma": "^6.8.2",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"

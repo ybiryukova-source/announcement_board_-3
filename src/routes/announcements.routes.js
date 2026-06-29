@@ -16,6 +16,8 @@ import {
   deleteAnnouncementValidator,
 } from '../validators/announcements.validator.js';
 
+import { authenticate } from '../middleware/auth.middleware.js';
+
 const router = express.Router();
 
 /**
@@ -23,44 +25,33 @@ const router = express.Router();
  * /announcements:
  *   get:
  *     summary: Отримати список оголошень
- *     description: Повертає список оголошень з пошуком, сортуванням та пагінацією.
+ *     tags: [Announcements]
  *     parameters:
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
- *         description: Пошук за назвою
  *       - in: query
  *         name: sort
  *         schema:
  *           type: string
- *           enum:
- *             - newest
- *             - oldest
- *         description: Сортування
+ *           enum: [newest, oldest]
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
- *           minimum: 1
- *         description: Номер сторінки
  *     responses:
  *       200:
- *         description: Список оголошень успішно отримано
- *       400:
- *         description: Некоректні параметри запиту
+ *         description: Список оголошень
  */
-router.get(
-  '/',
-  getAnnouncementsValidator,
-  getAnnouncements
-);
+router.get('/', getAnnouncementsValidator, getAnnouncements);
 
 /**
  * @swagger
  * /announcements/{id}:
  *   get:
- *     summary: Отримати оголошення за ID
+ *     summary: Отримати оголошення по ID
+ *     tags: [Announcements]
  *     parameters:
  *       - in: path
  *         name: id
@@ -71,19 +62,18 @@ router.get(
  *       200:
  *         description: Оголошення знайдено
  *       404:
- *         description: Announcement not found
+ *         description: Not found
  */
-router.get(
-  '/:id',
-  getAnnouncementByIdValidator,
-  getAnnouncementById
-);
+router.get('/:id', getAnnouncementByIdValidator, getAnnouncementById);
 
 /**
  * @swagger
  * /announcements:
  *   post:
- *     summary: Створити нове оголошення
+ *     summary: Створити оголошення
+ *     tags: [Announcements]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -105,30 +95,24 @@ router.get(
  *                 type: number
  *               category:
  *                 type: string
- *                 enum:
- *                   - sale
- *                   - service
- *                   - job
- *                   - other
  *               contactInfo:
  *                 type: string
  *     responses:
  *       201:
- *         description: Оголошення створено
- *       400:
- *         description: Помилка валідації
+ *         description: Створено
+ *       401:
+ *         description: Unauthorized
  */
-router.post(
-  '/',
-  createAnnouncementValidator,
-  createAnnouncement
-);
+router.post('/', authenticate, createAnnouncementValidator, createAnnouncement);
 
 /**
  * @swagger
  * /announcements/{id}:
  *   patch:
- *     summary: Частково оновити оголошення
+ *     summary: Оновити оголошення
+ *     tags: [Announcements]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -141,41 +125,24 @@ router.post(
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               category:
- *                 type: string
- *                 enum:
- *                   - sale
- *                   - service
- *                   - job
- *                   - other
- *               contactInfo:
- *                 type: string
  *     responses:
  *       200:
- *         description: Оголошення оновлено
- *       400:
- *         description: Помилка валідації
+ *         description: Оновлено
+ *       403:
+ *         description: Forbidden
  *       404:
- *         description: Announcement not found
+ *         description: Not found
  */
-router.patch(
-  '/:id',
-  updateAnnouncementValidator,
-  updateAnnouncement
-);
+router.patch('/:id', authenticate, updateAnnouncementValidator, updateAnnouncement);
 
 /**
  * @swagger
  * /announcements/{id}:
  *   delete:
  *     summary: Видалити оголошення
+ *     tags: [Announcements]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -184,14 +151,12 @@ router.patch(
  *           type: integer
  *     responses:
  *       204:
- *         description: Оголошення успішно видалено
+ *         description: Видалено
+ *       403:
+ *         description: Forbidden
  *       404:
- *         description: Announcement not found
+ *         description: Not found
  */
-router.delete(
-  '/:id',
-  deleteAnnouncementValidator,
-  deleteAnnouncement
-);
+router.delete('/:id', authenticate, deleteAnnouncementValidator, deleteAnnouncement);
 
 export default router;
