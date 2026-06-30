@@ -17,6 +17,7 @@ import {
 } from '../validators/announcements.validator.js';
 
 import { authenticate } from '../middleware/auth.middleware.js';
+import upload from '../middleware/upload.middleware.js';
 
 const router = express.Router();
 
@@ -70,14 +71,14 @@ router.get('/:id', getAnnouncementByIdValidator, getAnnouncementById);
  * @swagger
  * /announcements:
  *   post:
- *     summary: Створити оголошення
+ *     summary: Створити оголошення (з можливістю завантаження фото)
  *     tags: [Announcements]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -95,15 +96,31 @@ router.get('/:id', getAnnouncementByIdValidator, getAnnouncementById);
  *                 type: number
  *               category:
  *                 type: string
+ *                 enum:
+ *                   - sale
+ *                   - service
+ *                   - job
+ *                   - other
  *               contactInfo:
  *                 type: string
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Створено
+ *       400:
+ *         description: Помилка валідації
  *       401:
  *         description: Unauthorized
  */
-router.post('/', authenticate, createAnnouncementValidator, createAnnouncement);
+router.post(
+  '/',
+  authenticate,
+  upload.single('image'),
+  createAnnouncementValidator,
+  createAnnouncement
+);
 
 /**
  * @swagger
@@ -122,9 +139,28 @@ router.post('/', authenticate, createAnnouncementValidator, createAnnouncement);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               category:
+ *                 type: string
+ *                 enum:
+ *                   - sale
+ *                   - service
+ *                   - job
+ *                   - other
+ *               contactInfo:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Оновлено
@@ -133,7 +169,13 @@ router.post('/', authenticate, createAnnouncementValidator, createAnnouncement);
  *       404:
  *         description: Not found
  */
-router.patch('/:id', authenticate, updateAnnouncementValidator, updateAnnouncement);
+router.patch(
+  '/:id',
+  authenticate,
+  upload.single('image'),
+  updateAnnouncementValidator,
+  updateAnnouncement
+);
 
 /**
  * @swagger
@@ -157,6 +199,11 @@ router.patch('/:id', authenticate, updateAnnouncementValidator, updateAnnounceme
  *       404:
  *         description: Not found
  */
-router.delete('/:id', authenticate, deleteAnnouncementValidator, deleteAnnouncement);
+router.delete(
+  '/:id',
+  authenticate,
+  deleteAnnouncementValidator,
+  deleteAnnouncement
+);
 
 export default router;

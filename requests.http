@@ -174,3 +174,49 @@ Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
 
 DELETE http://localhost:3000/announcements/999999
 Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
+
+### ДЕМОНСТРАЦІЯ RATE LIMIT (Виконай цей запит 11 разів поспіль)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "ivan_petrenko",
+  "password": "wrong_password"
+}
+
+###
+
+ shadow_separator
+
+###
+
+POST http://localhost:3000/announcements
+Authorization: Bearer ВСТАВ_СВІЙ_ACCESS_TOKEN
+Content-Type: multipart/form-data; boundary=boundary_string
+
+--boundary_string
+Content-Disposition: form-data; name="title"
+
+Продам велосипед Trek 2026
+--boundary_string
+Content-Disposition: form-data; name="description"
+
+У відмінному стані, майже новий, оригінальна збірка.
+--boundary_string
+Content-Disposition: form-data; name="price"
+
+12500
+--boundary_string
+Content-Disposition: form-data; name="category"
+
+sale
+--boundary_string
+Content-Disposition: form-data; name="contactInfo"
+
+trek_owner@example.com
+--boundary_string
+Content-Disposition: form-data; name="image"; filename="bike.jpg"
+Content-Type: image/jpeg
+
+< ./bike.jpg
+--boundary_string--

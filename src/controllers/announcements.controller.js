@@ -1,30 +1,24 @@
-import { PrismaClient } from '@prisma/client'; // Оновлений стандартний імпорт
+import { PrismaClient } from '@prisma/client';
+import fs from 'fs/promises';
+import cloudinary from '../config/cloudinary.js';
+import logger from '../logger.js';
 
 const prisma = new PrismaClient();
 
 export const getAnnouncements = async (req, res, next) => {
   try {
     const { search, sort = 'newest', page = 1 } = req.query;
-
     const perPage = 10;
     const pageNum = Number(page);
-
     const where = {};
 
     if (search) {
-      where.title = {
-        contains: search,
-      };
+      where.title = { contains: search };
     }
 
-    let orderBy = {
-      createdAt: 'desc',
-    };
-
+    let orderBy = { createdAt: 'desc' };
     if (sort === 'oldest') {
-      orderBy = {
-        createdAt: 'asc',
-      };
+      orderBy = { createdAt: 'asc' };
     }
 
     const [announcements, total] = await Promise.all([
@@ -35,18 +29,11 @@ export const getAnnouncements = async (req, res, next) => {
         take: perPage,
         include: {
           user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-            },
+            select: { id: true, username: true, name: true },
           },
         },
       }),
-
-      prisma.announcement.count({
-        where,
-      }),
+      prisma.announcement.count({ where }),
     ]);
 
     res.json({
@@ -66,36 +53,40 @@ export const getAnnouncements = async (req, res, next) => {
 export async function getAnnouncementById(req, res, next) {
   try {
     const id = Number(req.params.id);
-
     const announcement = await prisma.announcement.findUnique({
       where: { id },
       include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            name: true,
-          },
-        },
+        user: { select: { id: true, username: true, name: true } },
       },
     });
 
     if (!announcement) {
-      return res.status(404).json({
-        error: 'Announcement not found'
-      });
+      return res.status(404).json({ error: 'Announcement not found' });
     }
 
     res.json(announcement);
-
   } catch (err) {
     next(err);
   }
 }
 
 export async function createAnnouncement(req, res, next) {
+  let tempFilePath = null;
   try {
     const { title, description, price, category, contactInfo } = req.body;
+    let imageUrl = null;
+
+    if (req.file) {
+      tempFilePath = req.file.path;
+      const uploadResult = await cloudinary.uploader.upload(tempFilePath, {
+        folder: 'announcements',
+      });
+      imageUrl = uploadResult.secure_url;
+      logger.info({ url: imageUrl }, 'Photo uploaded to Cloudinary');
+      
+      await fs.unlink(tempFilePath);
+      tempFilePath = null;
+    }
 
     const errors = {};
     const validCategories = ['sale', 'service', 'job', 'other'];
@@ -103,27 +94,21 @@ export async function createAnnouncement(req, res, next) {
     if (!title || title.trim().length < 5) {
       errors.title = 'Назва має бути не менше 5 символів';
     }
-
     if (!description || description.trim().length < 10) {
       errors.description = 'Опис має бути не менше 10 символів';
     }
-
     if (!contactInfo || contactInfo.trim().length < 5) {
       errors.contactInfo = 'Контакти мають бути не менше 5 символів';
     }
-
     if (!validCategories.includes(category)) {
       errors.category = 'Оберіть категорію';
     }
-
     if (!price || isNaN(price) || Number(price) <= 0) {
       errors.price = 'Ціна має бути додатним числом';
     }
 
     if (Object.keys(errors).length > 0) {
-      return res.status(400).json({
-        errors,
-      });
+      return res.status(400).json({ errors });
     }
 
     const announcement = await prisma.announcement.create({
@@ -134,16 +119,23 @@ export async function createAnnouncement(req, res, next) {
         category,
         contactInfo: contactInfo.trim(),
         userId: req.user.id,
+        imageUrl, 
       },
     });
 
+    logger.info({ announcementId: announcement.id, userId: req.user.id }, 'Announcement created successfully');
+
     res.status(201).json(announcement);
   } catch (err) {
+    if (tempFilePath) {
+      await fs.unlink(tempFilePath).catch(() => {});
+    }
     next(err);
   }
 }
 
 export async function updateAnnouncement(req, res, next) {
+  let tempFilePath = null;
   try {
     const id = Number(req.params.id);
     const { title, description, price, category, contactInfo } = req.body;
@@ -153,18 +145,26 @@ export async function updateAnnouncement(req, res, next) {
     });
 
     if (!announcement) {
-      return res.status(404).json({
-        error: 'Announcement not found',
-      });
+      return res.status(404).json({ error: 'Announcement not found' });
     }
 
     if (announcement.userId !== req.user.id) {
-      return res.status(403).json({
-        error: 'Access denied',
-      });
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Оновлюємо безпечно, захищаючи службові поля бази
+    let imageUrl = undefined; 
+    if (req.file) {
+      tempFilePath = req.file.path;
+      const uploadResult = await cloudinary.uploader.upload(tempFilePath, {
+        folder: 'announcements',
+      });
+      imageUrl = uploadResult.secure_url;
+      logger.info({ url: imageUrl }, 'New photo uploaded to Cloudinary for update');
+
+      await fs.unlink(tempFilePath);
+      tempFilePath = null;
+    }
+
     const updated = await prisma.announcement.update({
       where: { id },
       data: {
@@ -173,11 +173,17 @@ export async function updateAnnouncement(req, res, next) {
         ...(price && { price: Number(price) }),
         ...(category && { category }),
         ...(contactInfo && { contactInfo: contactInfo.trim() }),
+        ...(imageUrl !== undefined && { imageUrl }),
       },
     });
 
+    logger.info({ announcementId: updated.id }, 'Announcement updated successfully');
+
     res.json(updated);
   } catch (err) {
+    if (tempFilePath) {
+      await fs.unlink(tempFilePath).catch(() => {});
+    }
     next(err);
   }
 }
@@ -191,20 +197,16 @@ export async function deleteAnnouncement(req, res, next) {
     });
 
     if (!announcement) {
-      return res.status(404).json({
-        error: 'Announcement not found',
-      });
+      return res.status(404).json({ error: 'Announcement not found' });
     }
 
     if (announcement.userId !== req.user.id) {
-      return res.status(403).json({
-        error: 'Access denied',
-      });
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    await prisma.announcement.delete({
-      where: { id },
-    });
+    await prisma.announcement.delete({ where: { id } });
+
+    logger.info({ announcementId: id }, 'Announcement deleted successfully');
 
     res.status(204).end();
   } catch (err) {

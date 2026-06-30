@@ -14,33 +14,43 @@ export const getAnnouncementByIdValidator = celebrate({
   }),
 });
 
-export const createAnnouncementValidator = celebrate({
-  [Segments.BODY]: Joi.object({
-    title: Joi.string().min(5).max(100).required(),
-    description: Joi.string().min(10).required(),
-    price: Joi.number().positive().required(),
-    category: Joi.string()
-      .valid('sale', 'service', 'job', 'other')
-      .required(),
-    contactInfo: Joi.string().min(5).required(),
-  }),
-});
+export const createAnnouncementValidator = celebrate(
+  {
+    [Segments.BODY]: Joi.object({
+      title: Joi.string().min(5).max(100).required(),
+      description: Joi.string().min(10).required(),
+      price: Joi.number().positive().required(),
+      category: Joi.string()
+        .valid('sale', 'service', 'job', 'other')
+        .required(),
+      contactInfo: Joi.string().min(5).required(),
+    }),
+  },
+  {
+    convert: true,
+  }
+);
 
-export const updateAnnouncementValidator = celebrate({
-  [Segments.PARAMS]: Joi.object({
-    id: Joi.number().integer().required(),
-  }),
+export const updateAnnouncementValidator = celebrate(
+  {
+    [Segments.PARAMS]: Joi.object({
+      id: Joi.number().integer().required(),
+    }),
 
-  [Segments.BODY]: Joi.object({
-    title: Joi.string().min(5).max(100).optional(),
-    description: Joi.string().min(10).optional(),
-    price: Joi.number().positive().optional(),
-    category: Joi.string()
-      .valid('sale', 'service', 'job', 'other')
-      .optional(),
-    contactInfo: Joi.string().min(5).optional(),
-  }).min(1),
-});
+    [Segments.BODY]: Joi.object({
+      title: Joi.string().min(5).max(100).optional(),
+      description: Joi.string().min(10).optional(),
+      price: Joi.number().positive().optional(),
+      category: Joi.string()
+        .valid('sale', 'service', 'job', 'other')
+        .optional(),
+      contactInfo: Joi.string().min(5).optional(),
+    }).min(1),
+  },
+  {
+    convert: true,
+  }
+);
 
 export const deleteAnnouncementValidator = celebrate({
   [Segments.PARAMS]: Joi.object({

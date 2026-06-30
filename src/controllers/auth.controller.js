@@ -2,12 +2,10 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import { PrismaClient } from '@prisma/client';
+import logger from '../logger.js';
 
 const prisma = new PrismaClient();
 
-/**
- * Генерація access + refresh токенів
- */
 const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { sub: user.id, username: user.username },
@@ -24,9 +22,6 @@ const generateTokens = (user) => {
   return { accessToken, refreshToken };
 };
 
-/**
- * Запис refresh token в httpOnly cookie
- */
 const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, {
     httpOnly: true,
@@ -68,6 +63,14 @@ export const register = async (req, res, next) => {
     });
 
     setRefreshCookie(res, refreshToken);
+
+    logger.info(
+      {
+        userId: user.id,
+        username: user.username,
+      },
+      'User registered'
+    );
 
     return res.status(201).json({
       user: {
@@ -116,6 +119,14 @@ export const login = async (req, res, next) => {
 
     setRefreshCookie(res, refreshToken);
 
+    logger.info(
+      {
+        userId: user.id,
+        username: user.username,
+      },
+      'User logged in'
+    );
+
     return res.json({
       user: {
         id: user.id,
@@ -132,15 +143,13 @@ export const login = async (req, res, next) => {
 
 export const refresh = async (req, res, next) => {
   try {
-    const token =
-      req.cookies?.refreshToken || req.body?.refreshToken;
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!token) {
       return next(createHttpError(401, 'Refresh token missing'));
     }
 
     let decoded;
-
     try {
       decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     } catch {
@@ -183,8 +192,7 @@ export const refresh = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    const token =
-      req.cookies?.refreshToken || req.body?.refreshToken;
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (token) {
       await prisma.refreshToken.deleteMany({
